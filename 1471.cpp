@@ -1,61 +1,64 @@
+
+//мой
 #include <iostream>
 #include <vector>
-
 using namespace std;
-#define MAX 500001
-vector<pair<int,int> > g[MAX];
-int d[MAX], f[MAX], dist[MAX];
-int up[MAX][20];
-int l, u, v, i, n, w, lca, timer, res, m;
-void dfs (int v, int p = 0, int len = 0)
-{
-    int i, to;
-    d[v] = timer++;
-    up[v][0] = p; dist[v] = len;
 
-    for(i = 1; i <= l; i++)
-        up[v][i] = up[up[v][i-1]][i-1];
+vector<pair<int,int>> gr[50001];
+int dynamic[50001][20], f_c[50001], s_c[50001], depth[50001], p[50001];
+int coun;
+int logg;
 
-    for(i = 0; i < g[v].size(); i++)
-    {
-        to = g[v][i].first;
-        if (to != p) dfs (to, v, len + g[v][i].second);
-    }
-    f[v] = timer++;
+void DFS(int v, int d){
+	depth[v] = d;
+	f_c[v] = coun++;
+	dynamic[v][0] = p[v];
+	for (int i = 1; i <= logg; i++)
+		dynamic[v][i] = dynamic[dynamic[v][i-1]][i-1];
+	for (int i = 0; i < gr[v].size(); i++){
+		int next = gr[v][i].first;
+		if (next != p[v]){
+			p[next] = v;
+			DFS(next, d+gr[v][i].second);
+		}
+	}
+	s_c[v] = coun++;
 }
 
-int Parent(int a, int b)
-{
-    return (d[a] <= d[b]) && (f[a] >= f[b]);
-}
-
-int LCA (int a, int b)
-{
-    if (Parent(a, b)) return a;
-    if (Parent(b, a)) return b;
-    for (int i = l; i >= 0; i--)
-        if (!Parent(up[a][i], b)) a = up[a][i];
-    return up[a][0];
+int find_lca(int a, int b){
+	if (f_c[a] <= f_c[b] && s_c[a] >= s_c[b])
+		return a;
+	else
+		if (f_c[b] <= f_c[a] && s_c[b] >= s_c[a])
+			return b;
+	for (int i = logg; i >= 0; i--){
+		if (!(f_c[dynamic[a][i]] <= f_c[b] && s_c[dynamic[a][i]] >= s_c[b]))
+			a = dynamic[a][i];
+	}
+	return dynamic[a][0];
 }
 
 int main(){
-    scanf("%d",&n);
-    l = 1;
-    while ((1 << l) <= n)  l++;
-    for(i = 0; i < n - 1; i++)
-    {
-        scanf("%d %d %d",&u,&v,&w);
-        g[u].push_back(make_pair(v,w));
-        g[v].push_back(make_pair(u,w));
-    }
-    dfs(0);
-    scanf("%d",&m);
-    for(i = 0; i < m; i++)
-    {
-        scanf("%d %d",&u,&v);
-        lca = LCA(u, v);
-        res = dist[u] - dist[lca] + dist[v] - dist[lca];
-        printf("%d\n",res);
-    }
-    return 0;
+	int n, m;
+	cin >> n;
+	logg = 1;
+	for (;;){
+		if ((1<<logg) > n) break;
+		logg++;
+	}
+	for (int i = 0; i < n-1; i++){
+		int u, v, w;
+		cin >> u >> v >> w;
+		gr[u].push_back(make_pair(v, w));
+		gr[v].push_back(make_pair(u, w));
+	}
+	p[0] = 0;
+	DFS(0, 0);
+	cin >> m;
+	for (int i = 0; i < m; i++){
+		int u, v;
+		cin >> u >> v;
+		cout << depth[u] + depth[v] - 2*depth[find_lca(u, v)] << endl;
+	}
+	return 0;
 }
